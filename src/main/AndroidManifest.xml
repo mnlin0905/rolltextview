@@ -1,2 +1,3 @@
-<manifest
-    package="com.knowledge.mnlin.rolltextview"/>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="com.knowledge.mnlin.rolltextview">
+</manifest>

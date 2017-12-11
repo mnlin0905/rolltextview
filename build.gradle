@@ -1,16 +1,20 @@
 apply plugin: 'com.android.library'
 
+//gradle-bintray-plugin插件来上传到jcenter
+apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'com.jfrog.bintray'
+
+//bintray-release插件来上传到jcenter
+//apply plugin: 'com.novoda.bintray-release'//添加
+
 android {
     compileSdkVersion 26
 
     defaultConfig {
-        minSdkVersion 14
+        minSdkVersion 16
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"
-
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-
     }
 
     buildTypes {
@@ -31,5 +35,99 @@ dependencies {
     implementation 'com.android.support:appcompat-v7:26.1.0'
     implementation 'com.android.support:design:26.1.0'
     implementation 'com.android.support:recyclerview-v7:26.1.0'
+}
 
+//添加
+/*publish {
+    repoName = 'maven' //仓库名称
+    userOrg = 'lovingning'//bintray.com用户名
+    groupId = 'com.knowledge.mnlin'//jcenter上的路径
+    artifactId = 'rolltextview'//项目名称
+    publishVersion = '0.0.1'//版本号
+    desc = 'roll text view'//描述，不重要
+    website = 'https://github.com/lovingning/rolltextview'//网站，不重要；尽量模拟github上的地址
+}*/
+
+
+//gradle-bintray-plugin插件来上传到jcenter
+def siteUrl = 'https://github.com/lovingning/rolltextview'    // project homepage
+def gitUrl = 'https://github.com/lovingning/rolltextview.git' // project git
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+bintray {
+    user = properties.getProperty("bintrayUser")
+    key = properties.getProperty("bintrayApiKey")
+    configurations = ['archives']
+    pkg {
+        repo = "maven"
+        name = "rolltextview"
+        websiteUrl = siteUrl
+        vcsUrl = gitUrl
+        licenses = ["GPL-3.0"]
+        publish = true
+    }
+}
+
+version = "0.0.1"
+
+group = "com.knowledge.mnlin"
+
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+//生成文档
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    options.encoding "UTF-8"
+    options.charSet 'UTF-8'
+    options.author true
+    options.version true
+    options.links "https://github.com/linglongxin24/FastDev/tree/master/mylibrary/docs/javadoc"
+    failOnError false
+}
+/*task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}*/
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+}
+
+install {
+    repositories.mavenInstaller {
+        // This generates POM.xml with proper parameters
+        pom {
+            project {
+                packaging 'aar'
+                name 'rolltextview'
+                url siteUrl
+                // Set your license
+                licenses {
+                    license {
+                        name 'GNU General Public License, Version 3.0'
+                        url 'http://www.gnu.org/licenses/gpl-3.0.html'
+                    }
+                }
+                developers {
+                    developer { //填写的一些基本信息
+                        id 'mnlin'
+                        name '**.wang'
+                        email 'mnlin0905@gmail.com'
+                    }
+                }
+                scm {
+                    connection gitUrl
+                    developerConnection gitUrl
+                    url siteUrl
+                }
+            }
+        }
+    }
 }
