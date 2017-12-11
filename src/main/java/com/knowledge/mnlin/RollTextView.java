@@ -2,6 +2,7 @@ package com.knowledge.mnlin;
 
 import android.content.Context;
 import android.graphics.Rect;
+import android.os.Build;
 import android.os.Handler;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.Nullable;
@@ -23,7 +24,6 @@ import java.util.List;
  * function :
  *
  * @author ACChain
- * @date 2017/12/7
  */
 
 public class RollTextView<T extends Object> extends RecyclerView {
@@ -110,7 +110,7 @@ public class RollTextView<T extends Object> extends RecyclerView {
         addOnScrollListener(new OnScrollListener() {
             @Override
             public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
-                if (!isAutoAnimate && isVisible()) {
+                if (newState==SCROLL_STATE_IDLE&&!isAutoAnimate && isVisible()) {
                     post(() -> startAnimation());
                 }
             }
@@ -188,7 +188,7 @@ public class RollTextView<T extends Object> extends RecyclerView {
 
         //如果数据为再次刷新出现，则先停止动画，然后加载数据，然后开启动画
         if (isAutoAnimate) {
-            stopAnimation(1);
+            stopAnimation();
         }
         adapter.notifyDataSetChanged();
         postDelayed(this::startAnimation, 200);
@@ -222,7 +222,7 @@ public class RollTextView<T extends Object> extends RecyclerView {
 
         //如果在某个时刻isAutoAnimate发生变化，则停止动画
         if (!isAutoAnimate) {
-            stopAnimation(3);
+            stopAnimation();
             return;
         }
 
@@ -262,15 +262,20 @@ public class RollTextView<T extends Object> extends RecyclerView {
         });
     }
 
-/*    @Override
+    @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         if (onWindowFocusChangeListener != null) {
-            getViewTreeObserver().removeOnWindowFocusChangeListener(onWindowFocusChangeListener);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                getViewTreeObserver().removeOnWindowFocusChangeListener(onWindowFocusChangeListener);
+            }else {
+                post(this::stopAnimation);
+            }
+            Log.v(getClass().getSimpleName(), "移除动画监听器。。。" );
         }
-    }*/
+    }
 
-/*    @Override
+    @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         if (onWindowFocusChangeListener == null) {
@@ -280,13 +285,16 @@ public class RollTextView<T extends Object> extends RecyclerView {
                     Log.v(getClass().getSimpleName(), "动画开启，view可见。。。" );
                 }
                 if (!isVisible() && isAutoAnimate) {
-                    post(()->this.stopAnimation(4));
+                    post(this::stopAnimation);
                     Log.v(getClass().getSimpleName(), "动画结束，view消失。。。"  );
                 }
             };
         }
-        getViewTreeObserver().addOnWindowFocusChangeListener(onWindowFocusChangeListener);
-    }*/
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            getViewTreeObserver().addOnWindowFocusChangeListener(onWindowFocusChangeListener);
+        }
+        Log.v(getClass().getSimpleName(), "添加动画监听器。。。" );
+    }
 
     /**
      * 判断当前view是否可见
@@ -298,7 +306,7 @@ public class RollTextView<T extends Object> extends RecyclerView {
         Rect rect = new Rect();
         boolean can = getLocalVisibleRect(rect);
         if (can) {
-            isVisible = !(getBottom() < rect.top || getTop() > rect.bottom || getLeft() > rect.right || getRight() < rect.left);
+            isVisible = (rect.bottom-rect.top)*(rect.right-rect.left)>0;
         }
 
         /*
@@ -397,7 +405,7 @@ public class RollTextView<T extends Object> extends RecyclerView {
     /**
      * 关闭动画
      */
-    public synchronized void stopAnimation(int i) {
+    public synchronized void stopAnimation() {
         if (list == null || list.size() == 0 || getChildCount() == 0) {
             return;
         }
